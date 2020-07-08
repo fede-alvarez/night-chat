@@ -26,7 +26,7 @@ public class LampBehaviour : MonoBehaviour
     private int _battery = 10;
     private bool _isAbsorbing = false;
     private int _absorbingCount = 0;
-    private int _absorbingTime = 120;
+    private int _absorbingTime = 100;
 
     void Awake()
     {
@@ -46,8 +46,9 @@ public class LampBehaviour : MonoBehaviour
             if (_absorbingCount != 0 && _absorbingCount % _absorbingTime == 0)
             {
                 _absorbingCount = 0;
-                _battery -= 1;
-                _currentIntensity -= 0.2f;
+                _battery -= (GameManager.Instance.Difficulty == 0) ? 1 : 2;
+                _currentIntensity -= (GameManager.Instance.Difficulty == 0) ? 0.2f : 0.4f;
+
                 bulb.DOIntensity(_currentIntensity, 0.2f);
 
                 if (_battery <= 0) {
@@ -72,7 +73,16 @@ public class LampBehaviour : MonoBehaviour
 
     private IEnumerator SpawnRandomEnemy()
     {
-        yield return new WaitForSeconds(Random.Range(1.0f, 2.0f));
+        float minRange = 1.0f;
+        float maxRange = 2.0f;
+
+        if (GameManager.Instance.Difficulty != 0)
+        {
+            minRange = 0.5f;
+            maxRange = 1.2f;
+        }
+
+        yield return new WaitForSeconds(Random.Range(minRange, maxRange));
         GameManager.Instance.SetRandomEnemy();
     }
 
@@ -83,6 +93,29 @@ public class LampBehaviour : MonoBehaviour
 
     public void StopAbsorbing()
     {
+        _isAbsorbing = false;
+        _absorbingCount = 0;
+    }
+
+    public void ResetLamp()
+    {
+        _isOn = true;
+        _isFlickering = false;
+
+        _battery = 10;
+        _isAbsorbing = false;
+        _absorbingCount = 0;
+        _currentIntensity = _defaultIntensity;
+        bulb.DOIntensity(_defaultIntensity, 0.2f);
+        explosion.SetActive(false);
+    }
+
+    public void Explode()
+    {
+        explosion.SetActive(true);
+        _currentIntensity = 0;
+        bulb.DOIntensity(0, 0.1f);
+        _battery = 0;
         _isAbsorbing = false;
         _absorbingCount = 0;
     }

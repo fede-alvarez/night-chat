@@ -10,7 +10,7 @@ public class MobilePhone : MonoBehaviour
     public Light phoneLight;
     public GameObject lightSound;
 
-    private int SUBSTRACTION_TIME = 200;
+    private int SUBSTRACTION_TIME = 120;
     private int SUB_BAR_VALUE = 10;
     private int DEFAULT_INTENSITY = 15;
     [SerializeField]
@@ -32,7 +32,7 @@ public class MobilePhone : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space)) {
+        if (Input.GetMouseButtonDown(0)) {
             _isActive = !_isActive;
             phoneLight.intensity = (_isActive) ? _currentIntensity : 0;
             lightSound.SetActive(true);
@@ -45,6 +45,10 @@ public class MobilePhone : MonoBehaviour
         {
             _barsCount = 0;
             _subBar -= 1;
+            if (_subBar < 4)
+            {
+
+            }
             if (_subBar <= 0) {
                 _bars -= 1;
                 //phoneLight.intensity -= 5f;

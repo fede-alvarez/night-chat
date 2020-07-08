@@ -8,9 +8,13 @@ public class Laptop : MonoBehaviour
     public GameObject introCamera;
     public GameObject screen;
     public List<Texture> screenshots;
+    public List<Texture> afterScreenshots;
 
     [Header("Materials")]
+    public Material originalMaterial;
     public Material blackMaterial;
+    [Header("GUI")]
+    public ClickUI clickUIElement;
 
     [Header("Sounds")]
     public GameObject keySounds;
@@ -24,6 +28,7 @@ public class Laptop : MonoBehaviour
     private float _defaultWait = 5f;
     private float _waitFor = 5f;
     private bool _isWaiting = false;
+    private bool _autoSlide = false;
 
     private bool _isActive = true;
 
@@ -87,51 +92,67 @@ public class Laptop : MonoBehaviour
     {
         if (!_isActive) return;
 
-        if (Input.anyKey && !_isWaiting)
+        if (_autoSlide || (Input.anyKey && !_isWaiting))
         {
-            ResetAudios();
-            bool autoSlide = false;
-
-            _currentScreen++;
-
-            switch(_currentScreen)
-            {
-                case 1:
-                    PlayAudio("popup");
-                    break;
-                case 2:
-                    PlayAudio("click");
-                    autoSlide = true;
-                    break;
-                case 3:
-                    PlayAudio("popup");
-                    PlayAudio("keys");
-                    break;
-                case 4:
-                    PlayAudio("click");
-                    break;
-            }
-
-            if (_currentScreen < screenshots.Count)
-            {
-                if (!autoSlide)
-                    ChangeToScreen(_currentScreen);
-                else
-                    ChangeScreenDelayed(_currentScreen);
-
-                _isWaiting = true;
-                StartCoroutine("StopWaiting");
-            } else {
-                renderer.material = blackMaterial;
-                PlayAudio("off");
-                introCamera.GetComponent<Animator>().SetBool("ComputerIsOver", true);
-            }
+            clickUIElement.StopAnimation();
+            NextScreen();
         }
+    }
+
+    private void NextScreen()
+    {
+        ResetAudios();
+        _autoSlide = false;
+
+        _currentScreen++;
+
+
+
+        switch(_currentScreen)
+        {
+            case 1:
+                PlayAudio("popup");
+                break;
+            case 2:
+                PlayAudio("click");
+                _autoSlide = true;
+                break;
+            case 3:
+                PlayAudio("popup");
+                PlayAudio("keys");
+                break;
+            case 4:
+                PlayAudio("click");
+                break;
+        }
+
+        Animator introCamAnimator = introCamera.GetComponent<Animator>();
+
+        if (_currentScreen < screenshots.Count && !introCamAnimator.GetBool("ComputerIsOver"))
+        {
+            ChangeToScreen(_currentScreen);
+
+            _isWaiting = true;
+            StartCoroutine("StopWaiting");
+        } else {
+            renderer.material = blackMaterial;
+            PlayAudio("off");
+            introCamAnimator.SetBool("ComputerIsOver", true);
+        }
+    }
+
+    public void RestartScreen()
+    {
+        renderer.material = originalMaterial;
+        PlayAudio("popup");
+        renderer.material.SetTexture("_MainTex", afterScreenshots[0]);
     }
 
     private IEnumerator StopWaiting()
     {
-        yield return new WaitForSeconds(_waitFor);
+        yield return new WaitForSeconds((_autoSlide) ? 1.0f : _waitFor);
+        _autoSlide = false;
         _isWaiting = false;
+        clickUIElement.StartAnimation();
     }
 }
