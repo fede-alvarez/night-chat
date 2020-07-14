@@ -30,8 +30,16 @@ public class MobilePhone : MonoBehaviour
         lightSound.SetActive(false);
     }
 
+    public void LightOn()
+    {
+        _isActive = true;
+        phoneLight.intensity = DEFAULT_INTENSITY;
+    }
+
     void Update()
     {
+        if (GameManager.Instance.GameIsOver) return;
+
         if (Input.GetMouseButtonDown(0)) {
             _isActive = !_isActive;
             phoneLight.intensity = (_isActive) ? _currentIntensity : 0;
@@ -45,10 +53,11 @@ public class MobilePhone : MonoBehaviour
         {
             _barsCount = 0;
             _subBar -= 1;
+
             if (_subBar < 4)
             {
-
             }
+
             if (_subBar <= 0) {
                 _bars -= 1;
                 //phoneLight.intensity -= 5f;

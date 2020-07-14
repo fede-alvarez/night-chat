@@ -63,7 +63,8 @@ public class LampBehaviour : MonoBehaviour
                     if (OnLampBroken != null)
                         OnLampBroken();
 
-                    StartCoroutine("SpawnRandomEnemy");
+                    if (!GameManager.Instance.GameIsOver)
+                        StartCoroutine("SpawnRandomEnemy");
                 }
             }
 
@@ -73,13 +74,13 @@ public class LampBehaviour : MonoBehaviour
 
     private IEnumerator SpawnRandomEnemy()
     {
-        float minRange = 1.0f;
-        float maxRange = 2.0f;
+        float minRange = 0.8f;
+        float maxRange = 1.6f;
 
         if (GameManager.Instance.Difficulty != 0)
         {
-            minRange = 0.5f;
-            maxRange = 1.2f;
+            minRange = 0.3f;
+            maxRange = 1f;
         }
 
         yield return new WaitForSeconds(Random.Range(minRange, maxRange));
@@ -106,7 +107,7 @@ public class LampBehaviour : MonoBehaviour
         _isAbsorbing = false;
         _absorbingCount = 0;
         _currentIntensity = _defaultIntensity;
-        bulb.DOIntensity(_defaultIntensity, 0.2f);
+        bulb.DOIntensity(_defaultIntensity, 1.5f);
         explosion.SetActive(false);
     }
 

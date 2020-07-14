@@ -13,6 +13,17 @@ public class LevelLoader : MonoBehaviour
         StartCoroutine(LoadLevel(SceneManager.GetActiveScene().buildIndex + 1));
     }
 
+    public void LoadMenu()
+    {
+        transitionTime = 2f;
+        StartCoroutine(LoadLevel(0));
+    }
+
+    public void LoadGame()
+    {
+        StartCoroutine(LoadLevel(1));
+    }
+
     private IEnumerator LoadLevel( int levelIndex )
     {
         transition.SetTrigger("Start");

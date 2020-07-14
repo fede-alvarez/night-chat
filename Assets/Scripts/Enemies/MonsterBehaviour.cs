@@ -64,12 +64,13 @@ public class MonsterBehaviour : MonoBehaviour
     {
         currentState = States.Appears;
         vanishSoundEffect.SetActive(false);
-        StartCoroutine("SpawnRandomEnemy");
+        if (!GameManager.Instance.GameIsOver)
+            StartCoroutine("SpawnRandomEnemy");
     }
 
     private IEnumerator SpawnRandomEnemy()
     {
-        yield return new WaitForSeconds(Random.Range(2.0f, 3.0f));
+        yield return new WaitForSeconds(Random.Range(1.0f, 2.0f));
         _transform.localScale = defaultScale;
         GameManager.Instance.SetRandomEnemy();
     }

@@ -8,9 +8,19 @@ public class GameManager : MonoBehaviour
 {
     [Header("Initialize")]
     public Laptop laptop;
+    public MobilePhone mobile;
 
     public List<Transform> enemies;
     public List<GameObject> lamps;
+
+    public GameObject roofEnemy;
+
+    public LevelLoader levelLoader;
+
+    [Space]
+    [Header("Cameras")]
+    public GameObject mainCamera;
+    public GameObject introCamera;
 
     [Space]
     [Header("GUI")]
@@ -26,14 +36,18 @@ public class GameManager : MonoBehaviour
     private int _previousEnemy;
 
     private bool _timerActive = false;
-    private int _totalMinutes = 2;
-    private int _totalTime = 120;
+    private int _totalMinutes = 1; //2
+    private int _totalTime = 60; //120;
     private int _currentTime = 0;
 
     private int _currentHour = 23;
     private int _currentMinutes = 58;
 
     private int _currentLamps = 3;
+
+    private bool _cameraZooming = false;
+    private Camera _mainCamera;
+    private Quaternion _defaultMCamRotation;
 
     private AudioSource _breathSound;
 
@@ -46,16 +60,22 @@ public class GameManager : MonoBehaviour
             instance = this;
 
         _breathSound = GetComponent<AudioSource>();
+        _mainCamera = mainCamera.GetComponent<Camera>();
+
+        roofEnemy.SetActive(false);
 
         DOTween.Init();
     }
 
     void Start()
     {
+        _defaultMCamRotation = mainCamera.transform.rotation;
+
         ResetEnemies();
         SetLamps();
         UpdateMobileClock();
         //SetRandomEnemy();
+        ActivateTimer();
     }
 
     public void UpdateMobileClock()
@@ -89,13 +109,28 @@ public class GameManager : MonoBehaviour
                 UpdateMobileClock();
             }
 
-            if (_totalTime == 80)
+            if (_totalTime == 60)
             {
-                Debug.Log("80 - Difficult increased!");
+                //Debug.Log("60 - Difficult increased!");
                 _difficulty = 1;
             }
 
             if (_totalTime <= 0) OnTimerEnds();
+        }
+
+        /*
+        if (Input.GetKeyDown(KeyCode.Q)) {
+            OnTimerEnds(); // WIN
+        }else if (Input.GetKeyDown(KeyCode.W)) {
+            OnAllLampsBroken(); // LOSE
+        }
+        */
+
+        if (_cameraZooming)
+        {
+            _mainCamera.fieldOfView = Mathf.Lerp(_mainCamera.fieldOfView, 40, 1.5f);
+
+            if (_mainCamera.fieldOfView >= 40f) _cameraZooming = false;
         }
 
         //screenText.text = _totalTime.ToString();
@@ -103,18 +138,103 @@ public class GameManager : MonoBehaviour
 
     private void OnTimerEnds()
     {
-        _totalTime = 0;
-        _timerActive = false;
+        //Debug.Log("Time ends!");
+        Debug.Log("Ganaste");
         _gameOver = true;
-        StartCoroutine("NormalEnding");
+        _timerActive = false;
+
+        _totalTime = 0;
+
+        MouseLook mouseScript = mainCamera.GetComponent<MouseLook>();
+        mouseScript.enabled = false;
+        mouseScript.ToggleCursor();
+
+        StartCoroutine("YouWin");
     }
 
-    private IEnumerator NormalEnding()
+    private IEnumerator YouWin()
     {
-        yield return new WaitForSeconds(1.0f);
+        mobile.LightOn();
+        HideEnemies();
         RestartLamps();
+        yield return new WaitForSeconds(1.5f);
         _breathSound.volume = 0.2f;
+        mainCamera.transform.DORotateQuaternion(_defaultMCamRotation, 1.5f);
+        _cameraZooming = true;
+        mobileClock.text = "00:00";
+        yield return new WaitForSeconds(2.0f);
+        laptop.RestartLaptop();
+        introCamera.SetActive(true);
+        introCamera.GetComponent<Animator>().enabled = true;
+        IntroCamEnd intro = introCamera.GetComponent<IntroCamEnd>();
+        intro.StartWinAnimation();
+        roofEnemy.SetActive(true);
+        roofEnemy.GetComponent<Animator>().SetTrigger("Idle");
+        yield return new WaitForSeconds(11f);
+        levelLoader.LoadMenu();
+    }
 
+    private void OnLampBroken()
+    {
+        if (_gameOver) return;
+        _currentLamps--;
+
+        if (_currentLamps <= 0)
+        {
+            OnAllLampsBroken();
+        }
+    }
+
+    private void OnAllLampsBroken()
+    {
+        Debug.Log("Perdiste");
+        _gameOver = true;
+        _timerActive = false;
+
+        _totalTime = 0;
+
+        MouseLook mouseScript = mainCamera.GetComponent<MouseLook>();
+        mouseScript.enabled = false;
+        mouseScript.ToggleCursor();
+
+        StartCoroutine("YouLose");
+    }
+
+    private IEnumerator YouLose()
+    {
+        mobile.LightOn();
+        IntroCamEnd intro = introCamera.GetComponent<IntroCamEnd>();
+        mainCamera.transform.DORotateQuaternion(_defaultMCamRotation, 1.5f);
+        _cameraZooming = true;
+        RestartLamps();
+        yield return new WaitForSeconds(1.5f);
+        introCamera.SetActive(true);
+        introCamera.GetComponent<Animator>().enabled = false;
+        _breathSound.volume = 0.2f;
+        yield return new WaitForSeconds(2.0f);
+        introCamera.GetComponent<Animator>().enabled = true;
+        intro.StartLoseAnimation();
+        yield return new WaitForSeconds(1f);
+        ShowEnemies();
+        yield return new WaitForSeconds(5f);
+        levelLoader.LoadMenu();
+    }
+
+    private void ShowEnemies()
+    {
+        foreach( Transform enemy in enemies) {
+            enemy.gameObject.SetActive(true);
+            enemy.GetComponent<MonsterBehaviour>().IsActive = false;
+            enemy.GetComponent<Animator>().SetTrigger("Idle");
+        }
+    }
+
+    private void HideEnemies()
+    {
+        foreach( Transform enemy in enemies) {
+            enemy.gameObject.SetActive(false);
+            enemy.GetComponent<MonsterBehaviour>().IsActive = false;
+        }
     }
 
     public void ActivateTimer()
@@ -145,23 +265,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void OnLampBroken()
-    {
-        _currentLamps--;
-
-        if (_currentLamps <= 0)
-        {
-            OnAllLampsBroken();
-        }
-    }
-
-    private void OnAllLampsBroken()
-    {
-        Debug.Log("Perdiste");
-        _gameOver = true;
-
-    }
-
     private void ResetEnemies()
     {
         foreach( Transform enemy in enemies) {
@@ -190,5 +293,9 @@ public class GameManager : MonoBehaviour
 
     public int Difficulty {
         get { return _difficulty; }
+    }
+
+    public bool GameIsOver {
+        get { return _gameOver; }
     }
 }

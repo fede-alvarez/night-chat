@@ -13,6 +13,7 @@ public class Laptop : MonoBehaviour
     [Header("Materials")]
     public Material originalMaterial;
     public Material blackMaterial;
+
     [Header("GUI")]
     public ClickUI clickUIElement;
 
@@ -25,16 +26,19 @@ public class Laptop : MonoBehaviour
     private int _currentScreen = 0;
     private MeshRenderer renderer;
 
-    private float _defaultWait = 5f;
-    private float _waitFor = 5f;
+    private float _defaultWait = 2f;
+    private float _waitFor = 2f;
     private bool _isWaiting = false;
     private bool _autoSlide = false;
 
     private bool _isActive = true;
 
+    private Animator _introCamAnimator;
+
     void Awake()
     {
         renderer = screen.GetComponent<MeshRenderer>();
+        _introCamAnimator = introCamera.GetComponent<Animator>();
     }
 
     void Start()
@@ -101,12 +105,12 @@ public class Laptop : MonoBehaviour
 
     private void NextScreen()
     {
+        if (_introCamAnimator.GetBool("ComputerIsOver")) return;
+
         ResetAudios();
         _autoSlide = false;
 
         _currentScreen++;
-
-
 
         switch(_currentScreen)
         {
@@ -126,9 +130,7 @@ public class Laptop : MonoBehaviour
                 break;
         }
 
-        Animator introCamAnimator = introCamera.GetComponent<Animator>();
-
-        if (_currentScreen < screenshots.Count && !introCamAnimator.GetBool("ComputerIsOver"))
+        if (_currentScreen < screenshots.Count && !_introCamAnimator.GetBool("ComputerIsOver"))
         {
             ChangeToScreen(_currentScreen);
 
@@ -137,8 +139,15 @@ public class Laptop : MonoBehaviour
         } else {
             renderer.material = blackMaterial;
             PlayAudio("off");
-            introCamAnimator.SetBool("ComputerIsOver", true);
+            _introCamAnimator.SetBool("ComputerIsOver", true);
         }
+    }
+
+    public void RestartLaptop()
+    {
+        renderer.material = originalMaterial;
+        renderer.material.SetTexture("_MainTex", afterScreenshots[0]);
+        _introCamAnimator.SetBool("ComputerIsOver", false);
     }
 
     public void RestartScreen()
@@ -150,7 +159,7 @@ public class Laptop : MonoBehaviour
 
     private IEnumerator StopWaiting()
     {
-        yield return new WaitForSeconds((_autoSlide) ? 1.0f : _waitFor);
+        yield return new WaitForSeconds(_waitFor);
         _autoSlide = false;
         _isWaiting = false;
         clickUIElement.StartAnimation();

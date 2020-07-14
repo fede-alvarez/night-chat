@@ -25,6 +25,11 @@ public class MouseLook : MonoBehaviour
         //mainDialog.gameObject.SetActive(false);
     }
 
+    public void ToggleCursor()
+    {
+        Cursor.visible = !Cursor.visible;
+    }
+
     void Update()
     {
         PollForAxisAdjustments();
